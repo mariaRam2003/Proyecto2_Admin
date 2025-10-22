@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, MessageSquare, Filter } from "lucide-react";
+import { Plus, MessageSquare, Filter, Users } from "lucide-react";
 import { categories, priorityLabels, statusColumns } from "./data/categories";
 import { initialTickets } from "./data/initialTickets";
 import {
@@ -9,6 +9,9 @@ import {
 } from "./utils/helpers";
 
 function App() {
+  // NUEVO: Sistema de roles
+  const [userRole, setUserRole] = useState(null); // null = no seleccionado, 'user' = usuario normal, 'support' = equipo soporte
+
   const [activeView, setActiveView] = useState("board");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -44,6 +47,11 @@ function App() {
     setTickets([ticket, ...tickets]);
     setNewTicket({ title: "", description: "", category: "", tags: "" });
     setShowCreateModal(false);
+
+    // Mostrar mensaje de confirmación
+    alert(
+      "✅ Ticket creado exitosamente. El equipo de soporte lo revisará pronto."
+    );
   };
 
   const handleStatusChange = (ticketId, newStatus) => {
@@ -61,8 +69,8 @@ function App() {
             comments: [
               ...t.comments,
               {
-                user: "Usuario Actual",
-                avatar: "UC",
+                user: userRole === "support" ? "Equipo de Soporte" : "Usuario",
+                avatar: userRole === "support" ? "ES" : "U",
                 text: comment,
                 time: "Justo ahora",
               },
@@ -85,6 +93,212 @@ function App() {
 
   const stats = getStatistics(tickets, categories);
 
+  // PANTALLA DE SELECCIÓN DE ROL
+  if (userRole === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Jack's Cave - Service Desk
+            </h1>
+            <p className="text-lg text-gray-600">
+              Selecciona tu tipo de acceso al sistema
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* OPCIÓN: USUARIO */}
+            <button
+              onClick={() => setUserRole("user")}
+              className="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-blue-500"
+            >
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users size={40} className="text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Soy Estudiante
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Reportar problemas técnicos de la plataforma Jack's Cave
+              </p>
+              <ul className="text-left space-y-2 text-sm text-gray-600">
+                <li>✅ Crear tickets</li>
+                <li>✅ Describir problemas</li>
+                <li>✅ Seguimiento de tickets</li>
+                <li>❌ Sin acceso al tablero completo</li>
+              </ul>
+            </button>
+
+            {/* OPCIÓN: SOPORTE */}
+            <button
+              onClick={() => setUserRole("support")}
+              className="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-green-500"
+            >
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare size={40} className="text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Equipo de Soporte
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Gestionar y resolver tickets del Service Desk
+              </p>
+              <ul className="text-left space-y-2 text-sm text-gray-600">
+                <li>✅ Ver tablero Kanban completo</li>
+                <li>✅ Actualizar estados</li>
+                <li>✅ Responder comentarios</li>
+                <li>✅ Ver estadísticas</li>
+              </ul>
+            </button>
+          </div>
+
+          <div className="text-center mt-8 text-sm text-gray-500">
+            Selecciona tu rol para continuar
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VISTA PARA USUARIOS NORMALES (Solo crear tickets)
+  if (userRole === "user") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        {/* HEADER USUARIOS */}
+        <header className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Reportar Problema
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  ¿Tienes un problema con Jack's Cave? Cuéntanos aquí
+                </p>
+              </div>
+              <button
+                onClick={() => setUserRole(null)}
+                className="text-sm text-gray-600 hover:text-gray-900 underline"
+              >
+                Cambiar rol
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* FORMULARIO DE CREACIÓN */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Título del Problema *
+                </label>
+                <input
+                  type="text"
+                  value={newTicket.title}
+                  onChange={(e) =>
+                    setNewTicket({ ...newTicket, title: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                  placeholder="Ej: No puedo iniciar sesión en la plataforma"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción Detallada
+                </label>
+                <textarea
+                  value={newTicket.description}
+                  onChange={(e) =>
+                    setNewTicket({
+                      ...newTicket,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Describe el problema con el mayor detalle posible: ¿Qué estabas haciendo? ¿Cuándo ocurrió? ¿Qué mensaje de error viste?"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoría del Problema *
+                </label>
+                <select
+                  value={newTicket.category}
+                  onChange={(e) =>
+                    setNewTicket({ ...newTicket, category: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} - {cat.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags (separados por comas)
+                </label>
+                <input
+                  type="text"
+                  value={newTicket.tags}
+                  onChange={(e) =>
+                    setNewTicket({ ...newTicket, tags: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ej: login, urgente, móvil"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Ayúdanos a categorizar mejor tu problema con palabras clave
+                </p>
+              </div>
+
+              <button
+                onClick={handleCreateTicket}
+                disabled={!newTicket.title || !newTicket.category}
+                className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg shadow-md"
+              >
+                Enviar Ticket de Soporte
+              </button>
+            </div>
+          </div>
+
+          {/* INFORMACIÓN ADICIONAL */}
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-semibold text-blue-900 mb-3">
+              ℹ️ ¿Qué pasa después de enviar el ticket?
+            </h3>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li>
+                ✅ Tu ticket será revisado por el equipo de soporte en menos de
+                24 horas
+              </li>
+              <li>
+                ✅ Recibirás actualizaciones sobre el progreso de tu problema
+              </li>
+              <li>
+                ✅ El tiempo de resolución depende de la prioridad de tu ticket
+              </li>
+              <li>
+                ✅ Puedes crear múltiples tickets si tienes varios problemas
+              </li>
+            </ul>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // VISTA PARA EQUIPO DE SOPORTE (Tablero completo - código original)
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* HEADER */}
@@ -96,15 +310,14 @@ function App() {
                 Jack's Cave - Service Desk
               </h1>
               <p className="text-sm text-gray-600">
-                Sistema de Gestión de Tickets
+                Panel de Equipo de Soporte
               </p>
             </div>
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              onClick={() => setUserRole(null)}
+              className="text-sm bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200"
             >
-              <Plus size={20} />
-              <span className="hidden sm:inline">Crear Ticket</span>
+              Cambiar rol
             </button>
           </div>
 
@@ -345,114 +558,7 @@ function App() {
         )}
       </main>
 
-      {/* MODAL: CREAR TICKET */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Crear Nuevo Ticket
-              </h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Título del Problema *
-                  </label>
-                  <input
-                    type="text"
-                    value={newTicket.title}
-                    onChange={(e) =>
-                      setNewTicket({ ...newTicket, title: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ej: No puedo iniciar sesión"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción Detallada
-                  </label>
-                  <textarea
-                    value={newTicket.description}
-                    onChange={(e) =>
-                      setNewTicket({
-                        ...newTicket,
-                        description: e.target.value,
-                      })
-                    }
-                    rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Describe el problema..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Categoría del Problema *
-                  </label>
-                  <select
-                    value={newTicket.category}
-                    onChange={(e) =>
-                      setNewTicket({ ...newTicket, category: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name} - Prioridad: {priorityLabels[cat.priority]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags (separados por comas)
-                  </label>
-                  <input
-                    type="text"
-                    value={newTicket.tags}
-                    onChange={(e) =>
-                      setNewTicket({ ...newTicket, tags: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ej: login, urgente, móvil"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleCreateTicket}
-                  disabled={!newTicket.title || !newTicket.category}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  Crear Ticket
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setNewTicket({
-                      title: "",
-                      description: "",
-                      category: "",
-                      tags: "",
-                    });
-                  }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: DETALLE DE TICKET */}
+      {/* MODAL: DETALLE DE TICKET (Solo para Soporte) */}
       {selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
@@ -574,8 +680,8 @@ function App() {
                           comments: [
                             ...selectedTicket.comments,
                             {
-                              user: "Usuario Actual",
-                              avatar: "UC",
+                              user: "Equipo de Soporte",
+                              avatar: "ES",
                               text: e.target.value,
                               time: "Justo ahora",
                             },
@@ -595,8 +701,8 @@ function App() {
                           comments: [
                             ...selectedTicket.comments,
                             {
-                              user: "Usuario Actual",
-                              avatar: "UC",
+                              user: "Equipo de Soporte",
+                              avatar: "ES",
                               text: input.value,
                               time: "Justo ahora",
                             },
